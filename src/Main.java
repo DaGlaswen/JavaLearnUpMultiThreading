@@ -16,8 +16,8 @@ public class Main {
                 HashMap<String, Integer> result = new HashMap<>();
                 int sum = 0;
                 for (int i = 0; i < randomInts.length; i++) {
-                    if (i % divisor == 0) {
-                        sum += i;
+                    if (randomInts[i] % divisor == 0) {
+                        sum += randomInts[i];
                     }
                 }
                 result.put("divisor", divisor);
