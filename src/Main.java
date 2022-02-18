@@ -1,44 +1,54 @@
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Main {
     public static int[] randomInts = randomArr();
-    public static volatile int[] addOns = new int[randomInts.length];
-    public static Object obj = new Object();
 
     public static void main(String[] args) {
-        System.out.println(Arrays.toString(randomInts));
-        int[] divisors = new int[]{3, 5, 7, 19};
-        Thread[] threads = new Thread[divisors.length];
-        for (int i = 0; i < divisors.length; i++) {
-            int finalI = i;
-            threads[i] = new Thread(() -> {
-                for (int j = 0; j < randomInts.length; j++) {
-                    if (randomInts[j] % divisors[finalI] == 0) {
-                        synchronized (obj) {
-                            addOns[j] += 1;
-                        }
+        int[] divisors = new int[]{3, 5, 7, 9, 11};
+        ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        List<Future<HashMap<String, Integer>>> futureList = new ArrayList<>();
+        for (int divisor : divisors) {
+            Future<HashMap<String, Integer>> future = service.submit(() -> {
+                HashMap<String, Integer> result = new HashMap<>();
+                int sum = 0;
+                for (int i = 0; i < randomInts.length; i++) {
+                    if (i % divisor == 0) {
+                        sum += i;
                     }
                 }
+                result.put("divisor", divisor);
+                result.put("sum", sum);
+                return result;
             });
-            threads[i].start();
+            futureList.add(future);
         }
+        service.shutdown();
 
-        for (int i = 0; i < threads.length; i++) {
+        int maxSum = Integer.MIN_VALUE;
+        int maxDiv = 0;
+        for (Future<HashMap<String, Integer>> future : futureList) {
+            HashMap<String, Integer> x = null;
             try {
-                threads[i].join();
+                x = future.get();
             } catch (InterruptedException e) {
                 e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            int currSum = x.get("sum");
+            if (currSum > maxSum) {
+                maxSum = currSum;
+                maxDiv = x.get("divisor");
             }
         }
 
-        for (int i = 0; i < randomInts.length; i++) {
-            randomInts[i] += addOns[i];
-        }
 
-        System.out.println(Arrays.toString(randomInts));
+        System.out.println("Сумма чисел делящихся на " + maxDiv + " максимальная и равна " + maxSum);
     }
-
 
     public static int[] randomArr() {
         int[] randomInts = new int[1000];
